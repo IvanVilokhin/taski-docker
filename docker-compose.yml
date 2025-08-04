@@ -1,0 +1,36 @@
+# Файл docker-compose.yml
+version: '3'
+
+volumes:
+  pg_data:
+  # Новый volume — для статических файлов
+  static:
+
+services:
+  db:
+    image: postgres:13.10
+    env_file: .env
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+  backend:
+    build: ./backend/
+    env_file: .env
+    # Тут подключаем volume к backend
+    volumes:
+      - static:/backend_static
+  frontend:
+    env_file: .env
+    build: ./frontend/
+    command: cp -r /app/build/. /frontend_static/
+    volumes:
+      - static:/frontend_static
+  gateway:
+    build: ./gateway/
+    # А тут подключаем volume со статикой к gateway
+    volumes:
+      - static:/staticfiles/
+    ports:
+      - 8000:80
+    # добавил сам эту строчку по совету gpt и страницы начали подгружаться
+    depends_on:
+      - backend
